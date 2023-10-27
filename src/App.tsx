@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AppBar from './AppBar';
+import Iframe from 'react-iframe';
 
 function App() {
   console.log(window.ipcRenderer);
@@ -34,12 +35,12 @@ function App() {
   }, [fromMain, isSent]);
 
   return (
-    <div className="flex flex-col h-screen">
-      {window.Main && (
+    <div className="flex flex-col h-[480px]">
+      {/* {window.Main && (
         <div className="flex-none">
           <AppBar />
         </div>
-      )}
+      )} */}
       <div className="flex-auto">
         <div className=" flex flex-col justify-center items-center h-full bg-gray-800 space-y-4">
           <h1 className="text-2xl text-gray-200">Vite + React + Typescript + Electron + Tailwind</h1>

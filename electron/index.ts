@@ -2,11 +2,11 @@
 import { join } from 'path';
 
 // Packages
-import { BrowserWindow, app, ipcMain, IpcMainEvent } from 'electron';
+import { BrowserWindow, BrowserView, app, ipcMain, IpcMainEvent } from 'electron';
 import isDev from 'electron-is-dev';
 
-const height = 600;
-const width = 800;
+const height = 1200;
+const width = 1600;
 
 function createWindow() {
   // Create the browser window.
@@ -14,7 +14,7 @@ function createWindow() {
     width,
     height,
     //  change to false to use AppBar
-    frame: false,
+    frame: true,
     show: true,
     resizable: true,
     fullscreenable: true,
@@ -25,6 +25,16 @@ function createWindow() {
 
   const port = process.env.PORT || 3000;
   const url = isDev ? `http://localhost:${port}` : join(__dirname, '../src/out/index.html');
+
+  const chatGptView = new BrowserView()
+    window.addBrowserView(chatGptView)
+    chatGptView.setBounds({ x: 0, y: 480, width: 800, height: 720 })
+    chatGptView.webContents.loadURL('https://chat.openai.com/')
+  
+  const bardView = new BrowserView()
+    window.addBrowserView(bardView)
+    bardView.setBounds({ x: 800, y: 480, width: 800, height: 720 })
+    bardView.webContents.loadURL('https://bard.google.com/')
 
   // and load the index.html of the app.
   if (isDev) {
