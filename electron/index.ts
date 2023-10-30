@@ -19,6 +19,7 @@ function createWindow() {
     resizable: true,
     fullscreenable: true,
     webPreferences: {
+      nodeIntegration: true,
       preload: join(__dirname, 'preload.js')
     }
   });
@@ -30,12 +31,16 @@ function createWindow() {
     window.addBrowserView(chatGptView)
     chatGptView.setBounds({ x: 0, y: 480, width: 800, height: 720 })
     chatGptView.webContents.loadURL('https://chat.openai.com/')
+
+  const webContents  = chatGptView.webContents;
+  webContents.openDevTools(); 
   
   const bardView = new BrowserView()
     window.addBrowserView(bardView)
     bardView.setBounds({ x: 800, y: 480, width: 800, height: 720 })
     bardView.webContents.loadURL('https://bard.google.com/')
-
+  const BwebContents  = bardView.webContents;
+  BwebContents.openDevTools(); 
   // and load the index.html of the app.
   if (isDev) {
     window?.loadURL(url);
@@ -59,6 +64,66 @@ function createWindow() {
   ipcMain.on('close', () => {
     window.close();
   });
+
+  // @ts-ignore: TS6133
+  ipcMain.on('send-to-chatgpt', (event, text) => {
+    let script = `
+        let textarea = document.querySelector('#prompt-textarea');
+        if (textarea) {
+            // Set the value as if typed by a user
+            const text = '${text.replace(/'/g, "\\'")}';
+            for (let i = 0; i < text.length; i++) {
+                textarea.value += text[i];
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            // Dispatch a 'change' event
+            textarea.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        let sendButton = document.querySelector('[data-testid="send-button"]');
+        if (sendButton) {
+            setTimeout(() => {
+              sendButton.click();
+            }, 100);
+        }
+    `;
+    chatGptView.webContents.executeJavaScript(script);
+  });
+
+
+  // @ts-ignore: TS6133
+  ipcMain.on('send-to-bard', (event, text) => {
+    let script = `
+        let richTextArea = document.querySelector('.text-input-field_textarea'); // Replace with the actual selector
+        let sendButton = document.querySelector('[aria-label="Send message"]');
+
+        if (richTextArea) {
+            // Focus the rich text editor
+            richTextArea.focus();
+
+            // Simulate typing
+            const text = '${text.replace(/'/g, "\\'")}';
+            document.execCommand('insertText', false, text);
+
+            // Alternatively, if execCommand doesn't work, you might need to directly manipulate the innerHTML or textContent
+            // richTextArea.innerHTML = text; // Use with caution, and only if other methods fail
+
+            // Trigger any necessary events (input, keyup, change, etc.)
+            richTextArea.dispatchEvent(new Event('input', { bubbles: true }));
+            richTextArea.dispatchEvent(new Event('keyup', { bubbles: true, key: 'Enter' }));
+            richTextArea.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        // Wait for a brief moment to allow any UI updates
+        setTimeout(() => {
+            if (sendButton && !sendButton.disabled) {
+                sendButton.click();
+            }
+        }, 100);
+    `;
+    bardView.webContents.executeJavaScript(script);
+  });
 }
 
 // This method will be called when Electron has finished
@@ -79,6 +144,16 @@ app.whenReady().then(() => {
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// @ts-ignore: TS6133
+app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+    if (url === 'https://chat.openai.com/') { // Replace with your URL
+        event.preventDefault();
+        callback(true); // Ignore certificate errors
+    } else {
+        callback(false); // Handle other URLs normally
+    }
 });
 
 // In this file you can include the rest of your app's specific main process

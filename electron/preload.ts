@@ -30,6 +30,12 @@ const api = {
   Close: () => {
     ipcRenderer.send('close');
   },
+  SendToChatgpt: (text: string) => {
+    ipcRenderer.send('send-to-chatgpt', text);
+  },
+  SendToBard: (text: string) => {
+    ipcRenderer.send('send-to-bard', text);
+  },
   /**
    * Provide an easier way to listen to events
    */
